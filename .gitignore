@@ -1,0 +1,21 @@
+# dependencies
+node_modules
+
+# next.js
+.next/
+out/
+
+# packaged standalone output (npm run dist)
+dist/
+
+# env
+.env*.local
+
+# debug / tooling
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db

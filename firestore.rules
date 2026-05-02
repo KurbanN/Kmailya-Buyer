@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function roleIs(role) {
+      return signedIn() && request.auth.token.role == role;
+    }
+
+    function isAdmin() {
+      return roleIs("admin") || (signedIn() && request.auth.token.admin == true);
+    }
+
+    function isManager() {
+      return roleIs("manager") || (signedIn() && request.auth.token.manager == true);
+    }
+
+    function isStaff() {
+      return isAdmin() || isManager();
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() &&
+        (
+          request.auth.uid == uid &&
+          !("role" in request.resource.data) &&
+          !("status" in request.resource.data)
+        ) ||
+        isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if resource.data.status == "active" || isStaff();
+      allow create, update, delete: if isStaff();
+
+      match /images/{imageId} {
+        allow read: if isStaff() || get(/databases/$(database)/documents/products/$(productId)).data.status == "active";
+        allow create, update, delete: if isStaff();
+      }
+
+      match /variants/{variantId} {
+        allow read: if isStaff() || get(/databases/$(database)/documents/products/$(productId)).data.status == "active";
+        allow create, update, delete: if isStaff();
+      }
+    }
+
+    match /categories/{id} {
+      allow read: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    match /brands/{id} {
+      allow read: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isStaff() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn();
+      allow update, delete: if isStaff();
+
+      match /items/{itemId} {
+        allow read: if isStaff() || (signedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid);
+        allow create, update, delete: if isStaff();
+      }
+
+      match /statusHistory/{historyId} {
+        allow read: if isStaff() || (signedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid);
+        allow create, update, delete: if isStaff();
+      }
+    }
+
+    match /inventoryLogs/{logId} {
+      allow read, create, update, delete: if isStaff();
+    }
+
+    match /promocodes/{code} {
+      allow read: if isStaff();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

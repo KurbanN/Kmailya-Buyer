@@ -1,0 +1,21 @@
+/** Пресет для одного клика в админке (name + уникальный slug в Firestore). */
+export const POPULAR_BRANDS = [
+  { name: "Nike", slug: "nike" },
+  { name: "Adidas", slug: "adidas" },
+  { name: "Puma", slug: "puma" },
+  { name: "Reebok", slug: "reebok" },
+  { name: "New Balance", slug: "new-balance" },
+  { name: "Converse", slug: "converse" },
+  { name: "Vans", slug: "vans" },
+  { name: "Zara", slug: "zara" },
+  { name: "H&M", slug: "hm" },
+  { name: "Mango", slug: "mango" },
+  { name: "Massimo Dutti", slug: "massimo-dutti" },
+  { name: "Calvin Klein", slug: "calvin-klein" },
+  { name: "Tommy Hilfiger", slug: "tommy-hilfiger" },
+  { name: "Levi's", slug: "levis" },
+  { name: "Uniqlo", slug: "uniqlo" },
+  { name: "GUCCI", slug: "gucci" },
+  { name: "Lacoste", slug: "lacoste" },
+  { name: "Under Armour", slug: "under-armour" },
+] as const
