@@ -1,7 +1,36 @@
+/** Сборка статики для GitHub Pages (Actions задаёт `GITHUB_PAGES=true`). */
+const isGithubPages =
+  process.env.GITHUB_PAGES === 'true' || process.env.GITHUB_PAGES === '1'
+
+/** Базовый путь на Pages: проект `owner/repo` → `/repo`; репозиторий `user/user.github.io` → корень. */
+function githubPagesBasePath() {
+  if (!isGithubPages) return ''
+  const explicit = process.env.NEXT_PUBLIC_BASE_PATH
+  if (typeof explicit === 'string' && explicit !== '') {
+    return explicit.startsWith('/') ? explicit : `/${explicit}`
+  }
+  const repo = process.env.GITHUB_REPOSITORY?.split('/')[1]
+  if (!repo) return ''
+  const owner = process.env.GITHUB_REPOSITORY?.split('/')[0]
+  if (owner && repo === `${owner}.github.io`) return ''
+  return `/${repo}`
+}
+
+const ghBase = githubPagesBasePath()
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /** Артефакт для папки `dist/` (см. `npm run dist`) — один переносимый билд + Node на сервере. */
-  output: 'standalone',
+  ...(isGithubPages
+    ? {
+        output: 'export',
+        basePath: ghBase,
+        assetPrefix: ghBase || undefined,
+        trailingSlash: true,
+      }
+    : {
+        /** Артефакт для папки `dist/` (см. `npm run dist`) — один переносимый билд + Node на сервере. */
+        output: 'standalone',
+      }),
   typescript: {
     ignoreBuildErrors: true,
   },

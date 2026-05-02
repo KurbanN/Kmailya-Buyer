@@ -1,0 +1,78 @@
+# Статический экспорт Next.js → GitHub Pages (ветка main).
+# В настройках репозитория: Settings → Pages → Build and deployment → Source: GitHub Actions.
+#
+# Ограничение: на Pages нет Node API — шаг ниже откладывает app/api на время сборки.
+# Для заказов, админки и т.д. нужен отдельный хост с сервером (Vercel, VPS + npm run dist).
+
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Pages URL and base path
+        id: meta
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          if [[ "$REPO" == "$OWNER.github.io" ]]; then
+            echo "site_url=https://${OWNER}.github.io" >> "$GITHUB_OUTPUT"
+          else
+            echo "site_url=https://${OWNER}.github.io/${REPO}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Exclude paths incompatible with static export
+        run: |
+          mv app/api app/_api_skip_static_export
+          mv app/admin app/_admin_skip_static_export
+          mv app/account/orders app/_account_orders_skip_static_export
+
+      # Добавьте в репозитории: Settings → Secrets and variables → Actions:
+      # FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY (строка ключа как в JSON сервисного аккаунта).
+      - name: Build static site
+        run: npm run build
+        env:
+          GITHUB_PAGES: 'true'
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.meta.outputs.site_url }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
