@@ -30,6 +30,7 @@ import {
   type ShopChipId,
   type SidebarCategoryKey,
 } from "@/lib/plp-filters"
+import { withPublicAssetUrls } from "@/lib/public-asset-url"
 import { PRODUCTS, type ProductDetail } from "@/lib/products-data"
 import { cn } from "@/lib/utils"
 
@@ -83,7 +84,7 @@ export default function ProductsPage() {
         const res = await fetch("/api/products")
         const json = await res.json()
         if (res.ok && Array.isArray(json.items)) {
-          setProducts(json.items)
+          setProducts(json.items.map(withPublicAssetUrls))
         }
       } catch {
         // Keep static fallback already loaded in state

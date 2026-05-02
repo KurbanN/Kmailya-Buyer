@@ -1,3 +1,5 @@
+import { publicAssetUrl } from "@/lib/public-asset-url"
+
 /** Локальные файлы в `public/products/` */
 export const PRODUCT_FILES = [
   "Rectangle 3-1.png",
@@ -45,7 +47,9 @@ export type ProductDetail = {
 
 function rotateGallery(start: number): string[] {
   const n = P.length
-  return Array.from({ length: n }, (_, i) => P[(start + i) % n]!)
+  return Array.from({ length: n }, (_, i) =>
+    publicAssetUrl(P[(start + i) % n]!),
+  )
 }
 
 export const PRODUCTS: Record<string, ProductDetail> = {

@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebase-admin"
+import { publicAssetUrl } from "@/lib/public-asset-url"
 import { PRODUCTS, type ProductDetail } from "@/lib/products-data"
 
 function fromStatic(): ProductDetail[] {
@@ -84,12 +85,13 @@ function toProductDetail(
     mrpNote: "",
     description:
       typeof data.description === "string" ? data.description : "",
-    gallery:
+    gallery: (
       Array.isArray(data.imageUrls) && data.imageUrls.length > 0
         ? (data.imageUrls.filter((x) => typeof x === "string") as string[])
         : typeof data.coverImageUrl === "string"
           ? [data.coverImageUrl]
-          : ["/logo.png"],
+          : ["/logo.png"]
+    ).map(publicAssetUrl),
     colors: [{ hex: "#d9d9d9" }],
     sizes,
     listCategory: typeof data.categoryId === "string" ? data.categoryId : undefined,
