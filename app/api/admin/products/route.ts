@@ -5,6 +5,7 @@ import { adminDb } from "@/lib/firebase-admin"
 import { handleApiError, ok } from "@/lib/server/api/responses"
 import { requireAdminAccess } from "@/lib/server/auth/admin-route"
 import { paginationQuerySchema } from "@/lib/validators/admin-entities"
+import { syncDefaultVariantsForProduct } from "@/lib/server/inventory/sync-default-variants"
 import { productCreateSchema } from "@/lib/validators/products"
 
 const COLLECTION = "products"
@@ -60,7 +61,17 @@ export async function POST(request: NextRequest) {
       updatedBy: ctx.uid,
     })
 
-    return ok({ id: ref.id }, 201)
+    const variantSync = await syncDefaultVariantsForProduct({
+      productId: ref.id,
+      baseSku: body.sku,
+      sizes: body.sizes ?? [],
+      colors: body.colors,
+      stockCount: body.stockCount ?? 0,
+      actorUid: ctx.uid,
+      mode: "initial",
+    })
+
+    return ok({ id: ref.id, variantsCreated: variantSync.created }, 201)
   } catch (err) {
     return handleApiError(err)
   }

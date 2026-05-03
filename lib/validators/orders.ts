@@ -2,13 +2,12 @@ import { z } from "zod"
 
 import { orderStatusSchema } from "@/lib/validators/domain"
 
-export const orderItemSchema = z.object({
+/** Вход заказа: цены и названия позиций считаются на сервере по каталогу. */
+export const createOrderItemSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().min(1),
   size: z.string().min(1),
   colorHex: z.string().min(1),
-  unitPrice: z.number().min(0),
-  title: z.string().min(1),
 })
 
 export const createOrderSchema = z.object({
@@ -23,7 +22,7 @@ export const createOrderSchema = z.object({
   zip: z.string().min(1),
   shippingMethod: z.string().min(1),
   paymentMethod: z.string().min(1),
-  items: z.array(orderItemSchema).min(1),
+  items: z.array(createOrderItemSchema).min(1),
   subtotal: z.number().min(0),
   shippingFee: z.number().min(0),
   total: z.number().min(0),

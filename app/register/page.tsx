@@ -12,6 +12,7 @@ import {
 import { doc, serverTimestamp, setDoc } from "firebase/firestore"
 
 import { getClientAuth, getClientDb } from "@/lib/firebase-client"
+import { mapFirebaseClientError } from "@/lib/firebase-auth-errors"
 import { ensureUserProfile } from "@/lib/firebase-user"
 import { StoreHeader } from "@/components/store-header"
 import { Button } from "@/components/ui/button"
@@ -49,15 +50,11 @@ export default function RegisterPage() {
       await setDoc(doc(db, "users", credential.user.uid), {
         email: credential.user.email,
         name: safeName || null,
-        role: "USER",
+        role: "customer",
         createdAt: serverTimestamp(),
       })
     } catch (err) {
-      const message =
-        err instanceof Error && err.message.includes("email-already-in-use")
-          ? "Этот email уже зарегистрирован."
-          : "Не удалось создать аккаунт. Попробуйте ещё раз."
-      setError(message)
+      setError(mapFirebaseClientError(err))
       setPending(false)
       return
     }
@@ -77,8 +74,8 @@ export default function RegisterPage() {
       await ensureUserProfile(credential.user)
       router.push("/account")
       router.refresh()
-    } catch {
-      setError("Не удалось зарегистрироваться через Google. Попробуйте ещё раз.")
+    } catch (err) {
+      setError(mapFirebaseClientError(err))
     } finally {
       setGooglePending(false)
     }

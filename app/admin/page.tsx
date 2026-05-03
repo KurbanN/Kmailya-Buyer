@@ -45,7 +45,9 @@ export default function AdminDashboardPage() {
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <div className="border border-neutral-200 p-4">Товаров: {data.totalProducts}</div>
             <div className="border border-neutral-200 p-4">Заказов: {data.totalOrders}</div>
-            <div className="border border-neutral-200 p-4">Выручка: ${data.revenue?.toFixed?.(2) ?? 0}</div>
+            <div className="border border-neutral-200 p-4">
+              Выручка (₸): {typeof data.revenue === "number" ? Math.round(data.revenue).toLocaleString("ru-RU") : "0"}
+            </div>
           </div>
         )}
       </section>

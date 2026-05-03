@@ -7,6 +7,7 @@ import { Star } from "lucide-react"
 
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
+import { siteFetchUrl } from "@/lib/public-asset-url"
 import { cn } from "@/lib/utils"
 
 type ReviewItem = {
@@ -61,7 +62,7 @@ export function ProductReviewsSection({ productId, onStatsChange }: Props) {
           headers.Authorization = `Bearer ${token}`
         }
         const res = await fetch(
-          `/api/reviews?productId=${encodeURIComponent(productId)}`,
+          siteFetchUrl(`/api/reviews?productId=${encodeURIComponent(productId)}`),
           { headers },
         )
         const j = await res.json()
@@ -90,7 +91,7 @@ export function ProductReviewsSection({ productId, onStatsChange }: Props) {
     setError(null)
     try {
       const token = await user.getIdToken()
-      const res = await fetch("/api/reviews", {
+      const res = await fetch(siteFetchUrl("/api/reviews"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

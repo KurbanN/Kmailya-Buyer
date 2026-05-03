@@ -25,6 +25,7 @@ import { useShop } from "@/components/shop-provider"
 import { displayPriceKztFromCatalog, formatKzt, kztFromPriceString } from "@/lib/currency"
 import { getFreeShippingThresholdKzt } from "@/lib/site-config"
 import { getProduct, type ProductDetail } from "@/lib/products-data"
+import { publicAssetUrl, siteFetchUrl, withPublicAssetUrls } from "@/lib/public-asset-url"
 import { cn } from "@/lib/utils"
 import {
   Sheet,
@@ -99,11 +100,11 @@ export function ProductDetailView({ productId, initialProduct = null }: Props) {
     }
     let cancelled = false
     setPdpLoading(true)
-    void fetch(`/api/products?ids=${encodeURIComponent(productId)}`)
+    void fetch(siteFetchUrl(`/api/products?ids=${encodeURIComponent(productId)}`))
       .then((r) => r.json())
       .then((j) => {
         if (cancelled || !j?.items?.[0]) return
-        setFetchedProduct(j.items[0] as ProductDetail)
+        setFetchedProduct(withPublicAssetUrls(j.items[0] as ProductDetail))
       })
       .catch(() => {})
       .finally(() => {
@@ -168,7 +169,9 @@ export function ProductDetailView({ productId, initialProduct = null }: Props) {
   }
 
   const mainSrc =
-    product.gallery[activeIdx] ?? product.gallery[0] ?? "/logo.png"
+    product.gallery[activeIdx] ??
+      product.gallery[0] ??
+      publicAssetUrl("/logo.png")
   const thumbs = product.gallery.slice(0, 7)
   const wishlistCount = wishlist.length
 
@@ -432,14 +435,15 @@ export function ProductDetailView({ productId, initialProduct = null }: Props) {
               <div className="mt-3 flex flex-wrap gap-2">
                 {product.colors.map((c, i) => (
                   <button
-                    key={c.hex}
+                    key={`${c.hex}-${i}`}
                     type="button"
                     onClick={() => setColorIdx(i)}
+                    title={c.name?.trim() || undefined}
                     className={cn(
                       "h-7 w-7 rounded-full border border-neutral-200 p-px transition-shadow sm:h-8 sm:w-8",
                       colorIdx === i ? "border-neutral-900 ring-1 ring-neutral-900 ring-offset-1" : "",
                     )}
-                    aria-label={`Цвет ${i + 1}`}
+                    aria-label={c.name?.trim() ? c.name.trim() : `Цвет ${i + 1}`}
                   >
                     <span
                       className="block h-full w-full rounded-full border border-neutral-200"

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react"
 
 import { useAuth } from "@/components/auth-provider"
 import { StoreHeader } from "@/components/store-header"
+import { siteFetchUrl } from "@/lib/public-asset-url"
 import { formatKzt } from "@/lib/currency"
 
 type OrderItem = {
@@ -94,9 +95,12 @@ export default function OrderDetailPage() {
     setErr(null)
     try {
       const token = await user.getIdToken(true)
-      const res = await fetch(`/api/orders/me/${encodeURIComponent(id)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await fetch(
+        siteFetchUrl(`/api/orders/me/${encodeURIComponent(id)}`),
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error ?? "Не удалось загрузить заказ")
       setOrder(json as OrderDetail)

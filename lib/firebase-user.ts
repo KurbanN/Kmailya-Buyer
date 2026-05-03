@@ -25,7 +25,7 @@ export async function ensureUserProfile(user: User) {
   await setDoc(ref, {
     email: user.email ?? null,
     name: user.displayName ?? null,
-    role: "USER",
+    role: "customer",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })

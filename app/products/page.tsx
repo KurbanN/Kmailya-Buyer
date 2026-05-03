@@ -30,7 +30,7 @@ import {
   type ShopChipId,
   type SidebarCategoryKey,
 } from "@/lib/plp-filters"
-import { withPublicAssetUrls } from "@/lib/public-asset-url"
+import { siteFetchUrl, withPublicAssetUrls } from "@/lib/public-asset-url"
 import { PRODUCTS, type ProductDetail } from "@/lib/products-data"
 import { cn } from "@/lib/utils"
 
@@ -81,7 +81,7 @@ export default function ProductsPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch("/api/products")
+        const res = await fetch(siteFetchUrl("/api/products"))
         const json = await res.json()
         if (res.ok && Array.isArray(json.items)) {
           setProducts(json.items.map(withPublicAssetUrls))

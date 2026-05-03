@@ -6,6 +6,32 @@ function fromStatic(): ProductDetail[] {
   return Object.values(PRODUCTS)
 }
 
+function expandProductHex(raw: string): string {
+  const s = raw.startsWith("#") ? raw.slice(1) : raw
+  if (s.length === 3) {
+    return `#${s[0]}${s[0]}${s[1]}${s[1]}${s[2]}${s[2]}`.toLowerCase()
+  }
+  return `#${s.toLowerCase()}`
+}
+
+function parseProductColors(data: Record<string, unknown>): { hex: string; name?: string }[] {
+  const raw = data.colors
+  if (!Array.isArray(raw) || raw.length === 0) return [{ hex: "#d9d9d9" }]
+  const out: { hex: string; name?: string }[] = []
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue
+    const o = item as Record<string, unknown>
+    let hexRaw = typeof o.hex === "string" ? o.hex.trim() : ""
+    if (!hexRaw) continue
+    if (!hexRaw.startsWith("#")) hexRaw = `#${hexRaw}`
+    if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hexRaw)) continue
+    const hex = expandProductHex(hexRaw)
+    const name = typeof o.name === "string" && o.name.trim() ? o.name.trim() : undefined
+    out.push(name ? { hex, name } : { hex })
+  }
+  return out.length > 0 ? out : [{ hex: "#d9d9d9" }]
+}
+
 async function brandNamesByIds(ids: string[]): Promise<Map<string, string>> {
   const uniq = [...new Set(ids.filter((x) => x && typeof x === "string"))]
   if (uniq.length === 0) return new Map()
@@ -92,7 +118,7 @@ function toProductDetail(
           ? [data.coverImageUrl]
           : ["/logo.png"]
     ).map(publicAssetUrl),
-    colors: [{ hex: "#d9d9d9" }],
+    colors: parseProductColors(data),
     sizes,
     listCategory: typeof data.categoryId === "string" ? data.categoryId : undefined,
     inStock: data.status !== "out_of_stock",

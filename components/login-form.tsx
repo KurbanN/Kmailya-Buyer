@@ -9,6 +9,7 @@ import {
   signInWithPopup,
 } from "firebase/auth"
 
+import { mapFirebaseClientError } from "@/lib/firebase-auth-errors"
 import { getClientAuth } from "@/lib/firebase-client"
 import { ensureUserProfile } from "@/lib/firebase-user"
 import { StoreHeader } from "@/components/store-header"
@@ -37,8 +38,8 @@ export function LoginForm() {
     setPending(true)
     try {
       await signInWithEmailAndPassword(getClientAuth(), email.trim().toLowerCase(), password)
-    } catch {
-      setError("Неверный email или пароль.")
+    } catch (err) {
+      setError(mapFirebaseClientError(err))
       setPending(false)
       return
     }
@@ -58,8 +59,8 @@ export function LoginForm() {
       await ensureUserProfile(credential.user)
       router.push(callbackUrl)
       router.refresh()
-    } catch {
-      setError("Не удалось войти через Google. Попробуйте ещё раз.")
+    } catch (err) {
+      setError(mapFirebaseClientError(err))
     } finally {
       setGooglePending(false)
     }

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 
 import { ProductPriceKzt } from "@/components/product-price-kzt"
 import type { ProductDetail } from "@/lib/products-data"
+import { publicAssetUrl, siteFetchUrl, withPublicAssetUrls } from "@/lib/public-asset-url"
 
 type Props = {
   excludeProductId: string
@@ -20,11 +21,15 @@ export function RelatedProducts({ excludeProductId }: Props) {
     void (async () => {
       try {
         const res = await fetch(
-          `/api/products?exclude=${encodeURIComponent(excludeProductId)}&limit=8`,
+          siteFetchUrl(
+            `/api/products?exclude=${encodeURIComponent(excludeProductId)}&limit=8`,
+          ),
         )
         const j = await res.json()
         if (!cancelled && res.ok && Array.isArray(j.items)) {
-          setItems(j.items.slice(0, 8))
+          setItems(
+            j.items.slice(0, 8).map((p: ProductDetail) => withPublicAssetUrls(p)),
+          )
         }
       } catch {
         if (!cancelled) setItems([])
@@ -50,7 +55,7 @@ export function RelatedProducts({ excludeProductId }: Props) {
             <Link href={`/product/${p.id}`} className="group block">
               <div className="relative mb-3 aspect-[3/4] overflow-hidden border border-neutral-200 bg-neutral-100">
                 <Image
-                  src={p.gallery[0] ?? "/logo.png"}
+                  src={p.gallery[0] ?? publicAssetUrl("/logo.png")}
                   alt=""
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"

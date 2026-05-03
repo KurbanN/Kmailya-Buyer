@@ -1,3 +1,4 @@
+import { publicAssetUrl } from "@/lib/public-asset-url"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -15,7 +16,7 @@ type Props = {
 export function SiteLogo({ className, sizeClassName = "h-8", imgClassName }: Props) {
   return (
     <img
-      src="/logo.png"
+      src={publicAssetUrl("/logo.png")}
       alt="Kamilya"
       width={200}
       height={48}
@@ -29,8 +30,8 @@ export function SiteLogo({ className, sizeClassName = "h-8", imgClassName }: Pro
       fetchPriority="high"
       onError={(e) => {
         const el = e.currentTarget
-        if (!el.src.endsWith("/logo.jpeg")) {
-          el.src = "/logo.jpeg"
+        if (!el.src.includes("logo.jpeg")) {
+          el.src = publicAssetUrl("/logo.jpeg")
         }
       }}
     />

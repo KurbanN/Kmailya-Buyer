@@ -27,7 +27,7 @@ export type ProductDetail = {
   description: string
   /** Главное фото + превью (до 6 кадров) */
   gallery: string[]
-  colors: { hex: string }[]
+  colors: { hex: string; name?: string }[]
   sizes: string[]
   /** Для списков на главной */
   listCategory?: string

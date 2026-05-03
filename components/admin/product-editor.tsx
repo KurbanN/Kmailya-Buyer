@@ -37,6 +37,7 @@ const defaultForm = {
   imageUrls: "",
   stockCount: 0,
   sizes: ["S", "M", "L"] as string[],
+  colors: [{ hex: "#d9d9d9", name: "Основной" }] as { hex: string; name: string }[],
   merchandisingTag: "none" as "none" | "new" | "hit",
   plpSortKey: 1000,
 }
@@ -51,6 +52,34 @@ function str(v: unknown): string {
 
 function normalizeSlug(raw: string) {
   return raw.trim().toLowerCase().replace(/\s+/g, "-")
+}
+
+/** Нормализует hex для API (#RGB → #rrggbb). Пустая строка — невалидный ввод. */
+function normalizeHexInput(raw: string): string {
+  let t = str(raw).trim()
+  if (!t) return ""
+  if (!t.startsWith("#")) t = `#${t}`
+  if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(t)) return ""
+  const s = t.slice(1)
+  if (s.length === 3) {
+    return `#${s[0]}${s[0]}${s[1]}${s[1]}${s[2]}${s[2]}`.toLowerCase()
+  }
+  return `#${s.toLowerCase()}`
+}
+
+function colorsFromApi(raw: unknown): { hex: string; name: string }[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return [{ hex: "#d9d9d9", name: "Основной" }]
+  }
+  const out: { hex: string; name: string }[] = []
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue
+    const o = item as Record<string, unknown>
+    const hex = normalizeHexInput(str(o.hex))
+    if (!hex) continue
+    out.push({ hex, name: str(o.name).trim() })
+  }
+  return out.length > 0 ? out : [{ hex: "#d9d9d9", name: "Основной" }]
 }
 
 function toFormDate(v: unknown): string {
@@ -120,6 +149,17 @@ function buildProductPayload(form: typeof defaultForm) {
     .filter(Boolean)
     .sort((a, b) => (sizeOrder.get(a as (typeof SIZE_OPTIONS)[number]) ?? 99) - (sizeOrder.get(b as (typeof SIZE_OPTIONS)[number]) ?? 99))
 
+  const colorRows = form.colors
+    .map((c) => {
+      const hex = normalizeHexInput(c.hex)
+      if (!hex) return null
+      const name = str(c.name).trim()
+      return name ? { hex, name } : { hex }
+    })
+    .filter((x): x is { hex: string; name?: string } => x !== null)
+  const colors =
+    colorRows.length > 0 ? colorRows : [{ hex: "#d9d9d9", name: "Основной" }]
+
   return {
     title: str(form.title).trim(),
     description: str(form.description).trim(),
@@ -143,6 +183,7 @@ function buildProductPayload(form: typeof defaultForm) {
       ? Math.max(0, Math.floor(Number(form.stockCount)))
       : 0,
     sizes,
+    colors,
     merchandisingTag: form.merchandisingTag,
     plpSortKey: Number.isFinite(Number(form.plpSortKey))
       ? Math.max(0, Math.floor(Number(form.plpSortKey)))
@@ -265,6 +306,7 @@ export function ProductEditor({ id }: { id?: string }) {
             Array.isArray(json.sizes) && json.sizes.length > 0
               ? (json.sizes as unknown[]).map((x) => str(x).trim()).filter(Boolean)
               : ["S", "M", "L"],
+          colors: colorsFromApi(json.colors),
           merchandisingTag:
             json.merchandisingTag === "new" || json.merchandisingTag === "hit"
               ? json.merchandisingTag
@@ -401,6 +443,19 @@ export function ProductEditor({ id }: { id?: string }) {
       }
       if (!payload.sizes.length) {
         throw new Error("Отметьте хотя бы один размер.")
+      }
+      {
+        const valid = form.colors.some((c) => normalizeHexInput(c.hex))
+        if (!valid) {
+          throw new Error("Укажите хотя бы один цвет в формате hex (например #d9d9d9).")
+        }
+        for (const c of form.colors) {
+          const raw = str(c.hex).trim()
+          if (!raw) continue
+          if (!normalizeHexInput(raw)) {
+            throw new Error(`Некорректный hex цвета: ${raw}`)
+          }
+        }
       }
 
       const res = await fetch(id ? `/api/admin/products/${id}` : "/api/admin/products", {
@@ -636,8 +691,85 @@ export function ProductEditor({ id }: { id?: string }) {
 
         <div className="space-y-2 md:col-span-2">
           <span className="text-[11px] uppercase tracking-[0.12em] text-neutral-500">
+            Цвета на витрине
+          </span>
+          <p className="text-[11px] text-neutral-500">
+            Hex и необязательное название. Для каждой пары «размер × цвет» создаётся строка на складе.
+            При создании товара общий остаток делится между всеми комбинациями; при правке новые
+            комбинации добавляются с нулевым остатком.
+          </p>
+          <div className="grid gap-2">
+            {form.colors.map((row, idx) => (
+              <div key={idx} className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  className="h-10 w-[140px] border border-neutral-300 px-3 font-mono text-sm"
+                  placeholder="#RRGGBB"
+                  autoComplete="off"
+                  value={row.hex}
+                  onChange={(e) =>
+                    setForm((p) => {
+                      const next = [...p.colors]
+                      next[idx] = { ...next[idx]!, hex: e.target.value }
+                      return { ...p, colors: next }
+                    })
+                  }
+                  aria-label={`Цвет ${idx + 1}, hex`}
+                />
+                <input
+                  type="text"
+                  className="h-10 min-w-[160px] flex-1 border border-neutral-300 px-3 text-sm"
+                  placeholder="Название (необязательно)"
+                  value={row.name}
+                  onChange={(e) =>
+                    setForm((p) => {
+                      const next = [...p.colors]
+                      next[idx] = { ...next[idx]!, name: e.target.value }
+                      return { ...p, colors: next }
+                    })
+                  }
+                />
+                <button
+                  type="button"
+                  className="h-10 border border-neutral-300 px-3 text-[11px] uppercase tracking-[0.12em] text-neutral-700 disabled:opacity-40"
+                  disabled={form.colors.length <= 1}
+                  onClick={() =>
+                    setForm((p) => ({
+                      ...p,
+                      colors: p.colors.filter((_, i) => i !== idx),
+                    }))
+                  }
+                >
+                  Удалить
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="h-10 w-fit border border-neutral-900 bg-white px-3 text-[11px] uppercase tracking-[0.12em] text-neutral-900 hover:bg-neutral-50 disabled:opacity-40"
+              disabled={form.colors.length >= 16}
+              onClick={() =>
+                setForm((p) => ({
+                  ...p,
+                  colors: [...p.colors, { hex: "#ffffff", name: "" }],
+                }))
+              }
+            >
+              Добавить цвет
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <span className="text-[11px] uppercase tracking-[0.12em] text-neutral-500">
             Размеры в наличии
           </span>
+          <p className="text-[11px] text-neutral-500">
+            Отметьте размеры; вместе с цветами выше они задают складские варианты. Общий остаток
+            (поле выше) при новом товаре делится между всеми комбинациями размер × цвет. Новые
+            комбинации при правке карточки создаются с нулевым остатком — пополните на странице
+            «Склад».
+          </p>
           <div className="flex flex-wrap gap-3">
             {SIZE_OPTIONS.map((s) => (
               <label

@@ -18,6 +18,7 @@ import {
 import { ProductPriceKzt } from "@/components/product-price-kzt"
 import type { ProductDetail } from "@/lib/products-data"
 import { PRODUCTS } from "@/lib/products-data"
+import { publicAssetUrl, siteFetchUrl, withPublicAssetUrls } from "@/lib/public-asset-url"
 import { cn } from "@/lib/utils"
 
 type Props = { children: React.ReactNode }
@@ -35,13 +36,13 @@ export function WishlistSheet({ children }: Props) {
       setResolved({})
       return
     }
-    void fetch(`/api/products?ids=${ids.map(encodeURIComponent).join(",")}`)
+    void fetch(siteFetchUrl(`/api/products?ids=${ids.map(encodeURIComponent).join(",")}`))
       .then((r) => r.json())
       .then((j) => {
         if (!Array.isArray(j?.items)) return
         const m: Record<string, ProductDetail> = {}
         ;(j.items as ProductDetail[]).forEach((p) => {
-          if (p?.id) m[p.id] = p
+          if (p?.id) m[p.id] = withPublicAssetUrls(p)
         })
         setResolved(m)
       })
@@ -91,7 +92,7 @@ export function WishlistSheet({ children }: Props) {
               <ul className="flex flex-col gap-0">
                 {ids.map((id) => {
                   const p = resolved[id] ?? PRODUCTS[id]
-                  const thumb = p?.gallery[0] ?? "/logo.png"
+                  const thumb = p?.gallery[0] ?? publicAssetUrl("/logo.png")
                   const title = p?.title ?? `Товар ${id}`
                   return (
                     <li

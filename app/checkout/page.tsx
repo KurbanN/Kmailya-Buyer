@@ -22,7 +22,9 @@ import { CHECKOUT_TAX_RATE, checkoutShippingFeeKzt } from "@/lib/checkout-consta
 import { formatKzt, usdToKzt } from "@/lib/currency"
 import { getFreeShippingThresholdKzt } from "@/lib/site-config"
 import { parsePriceUsd } from "@/lib/plp-filters"
+import type { ProductDetail } from "@/lib/products-data"
 import { PRODUCTS } from "@/lib/products-data"
+import { publicAssetUrl, siteFetchUrl, withPublicAssetUrls } from "@/lib/public-asset-url"
 import { cn } from "@/lib/utils"
 
 const noiseBg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E")`
@@ -101,7 +103,7 @@ export default function CheckoutPage() {
     setPromoLoading(true)
     setPromoError(null)
     try {
-      const res = await fetch("/api/promo/validate", {
+      const res = await fetch(siteFetchUrl("/api/promo/validate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, subtotalKzt: Math.round(subtotal) }),
@@ -129,12 +131,12 @@ export default function CheckoutPage() {
     if (ids.length === 0) return
     void (async () => {
       try {
-        const res = await fetch(`/api/products?ids=${ids.join(",")}`)
+        const res = await fetch(siteFetchUrl(`/api/products?ids=${ids.join(",")}`))
         const json = await res.json()
         if (res.ok && Array.isArray(json.items)) {
           const map = { ...PRODUCTS }
-          json.items.forEach((item: any) => {
-            if (item?.id) map[item.id] = item
+          json.items.forEach((item: ProductDetail) => {
+            if (item?.id) map[item.id] = withPublicAssetUrls(item)
           })
           setProductsById(map)
         }
@@ -188,7 +190,7 @@ export default function CheckoutPage() {
     setPlaceError(null)
     try {
       const token = await user?.getIdToken()
-      const res = await fetch("/api/orders", {
+      const res = await fetch(siteFetchUrl("/api/orders"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -207,15 +209,11 @@ export default function CheckoutPage() {
           shippingMethod: delivery,
           paymentMethod: "card_demo",
           promoCode: appliedPromo?.code,
-          items: lineTotals.map(({ line, product }) => ({
+          items: lineTotals.map(({ line }) => ({
             productId: line.productId,
             quantity: line.quantity,
             size: line.size,
             colorHex: line.colorHex,
-            unitPrice: product
-              ? usdToKzt(parsePriceUsd(product.price))
-              : (line.unitPriceKzt ?? 0),
-            title: product?.title ?? line.title ?? "Товар без названия",
           })),
           subtotal,
           shippingFee: shipping,
@@ -647,7 +645,8 @@ export default function CheckoutPage() {
               <ul className="max-h-[320px] space-y-5 overflow-y-auto border-b border-neutral-200 pb-6">
                 {lineTotals.map(({ line, product, sum }, i) => {
                   const title = product?.title ?? line.title ?? "Товар"
-                  const thumb = product?.gallery[0] ?? line.imageUrl ?? "/logo.png"
+                  const thumb =
+                    product?.gallery[0] ?? line.imageUrl ?? publicAssetUrl("/logo.png")
                   return (
                     <li key={`${line.productId}-${line.size}-${line.colorHex}-${i}`} className="flex gap-3">
                       <div className="relative h-[72px] w-14 shrink-0 overflow-hidden border border-neutral-200 bg-neutral-100">

@@ -19,6 +19,7 @@ import { formatKzt, kztFromPriceString } from "@/lib/currency"
 import { getFreeShippingThresholdKzt } from "@/lib/site-config"
 import type { ProductDetail } from "@/lib/products-data"
 import { PRODUCTS } from "@/lib/products-data"
+import { publicAssetUrl, siteFetchUrl, withPublicAssetUrls } from "@/lib/public-asset-url"
 
 type Props = { children: React.ReactNode }
 
@@ -42,13 +43,13 @@ export function ShoppingCartSheet({ children }: Props) {
       setResolved({})
       return
     }
-    void fetch(`/api/products?ids=${ids.map(encodeURIComponent).join(",")}`)
+    void fetch(siteFetchUrl(`/api/products?ids=${ids.map(encodeURIComponent).join(",")}`))
       .then((r) => r.json())
       .then((j) => {
         if (!Array.isArray(j?.items)) return
         const m: Record<string, ProductDetail> = {}
         ;(j.items as ProductDetail[]).forEach((p) => {
-          if (p?.id) m[p.id] = p
+          if (p?.id) m[p.id] = withPublicAssetUrls(p)
         })
         setResolved(m)
       })
@@ -99,7 +100,8 @@ export function ShoppingCartSheet({ children }: Props) {
                 {cartLines.map((line, index) => {
                   const p = resolved[line.productId] ?? PRODUCTS[line.productId]
                   const title = p?.title ?? line.title ?? "Товар"
-                  const thumb = p?.gallery[0] ?? line.imageUrl ?? "/logo.png"
+                  const thumb =
+                    p?.gallery[0] ?? line.imageUrl ?? publicAssetUrl("/logo.png")
                   const unit = p
                     ? kztFromPriceString(p.price)
                     : (line.unitPriceKzt ?? 0)

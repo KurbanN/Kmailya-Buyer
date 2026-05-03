@@ -16,11 +16,10 @@ import {
 import { doc, getDoc } from "firebase/firestore"
 
 import { getClientAuth, getClientDb } from "@/lib/firebase-client"
-
-type AppRole = "USER" | "ADMIN"
+import type { UserRole } from "@/lib/types/domain"
 
 type UserProfile = {
-  role: AppRole
+  role: UserRole
   name: string | null
 }
 
@@ -35,6 +34,28 @@ const AuthContext = createContext<AuthContextValue>({
   profile: null,
   loading: true,
 })
+
+function normalizeFirestoreRole(raw: unknown): UserRole | null {
+  if (typeof raw !== "string") return null
+  const r = raw.trim().toLowerCase()
+  if (r === "admin") return "admin"
+  if (r === "manager") return "manager"
+  if (r === "customer") return "customer"
+  if (r === "user") return "customer"
+  return null
+}
+
+/** JWT claims + документ users — согласовано с lib/server/auth/roles.ts и policy. */
+function resolveUserRole(
+  claims: Record<string, unknown>,
+  firestoreRole: unknown,
+): UserRole {
+  if (claims.role === "admin" || claims.admin === true) return "admin"
+  if (claims.role === "manager" || claims.manager === true) return "manager"
+  const dr = normalizeFirestoreRole(firestoreRole)
+  if (dr === "admin" || dr === "manager") return dr
+  return "customer"
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null)
@@ -53,23 +74,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false)
           return
         }
-        let claimRole: AppRole = "USER"
         try {
           const token = await getIdTokenResult(nextUser, true)
-          claimRole = token.claims.role === "ADMIN" || token.claims.admin ? "ADMIN" : "USER"
-        } catch {}
-        try {
+          const claims = token.claims as Record<string, unknown>
           const snap = await getDoc(doc(db, "users", nextUser.uid))
           const data = snap.data()
+          const role = resolveUserRole(claims, data?.role)
           setProfile({
-            role: data?.role === "ADMIN" || claimRole === "ADMIN" ? "ADMIN" : "USER",
+            role,
             name: typeof data?.name === "string" ? data.name : nextUser.displayName ?? null,
           })
         } catch {
-          setProfile({
-            role: claimRole,
-            name: nextUser.displayName ?? null,
-          })
+          try {
+            const token = await getIdTokenResult(nextUser, true)
+            const claims = token.claims as Record<string, unknown>
+            setProfile({
+              role: resolveUserRole(claims, undefined),
+              name: nextUser.displayName ?? null,
+            })
+          } catch {
+            setProfile({
+              role: "customer",
+              name: nextUser.displayName ?? null,
+            })
+          }
         } finally {
           setLoading(false)
         }

@@ -29,6 +29,21 @@ const sizesSchema = z
   .min(1)
   .max(24)
 
+export const productColorEntrySchema = z.object({
+  hex: z
+    .string()
+    .trim()
+    .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "Некорректный hex цвета"),
+  name: z.string().trim().max(40).optional().default(""),
+})
+
+const productColorsSchema = z
+  .array(productColorEntrySchema)
+  .min(1)
+  .max(16)
+  .optional()
+  .default([{ hex: "#d9d9d9", name: "Основной" }])
+
 export const productBaseFieldsSchema = z.object({
   title: z.string().trim().min(2).max(160),
   description: z.string().trim().min(3).max(5000),
@@ -55,6 +70,8 @@ export const productBaseFieldsSchema = z.object({
   stockCount: z.coerce.number().int().min(0).max(999999).optional().default(0),
   /** Доступные размеры на PDP и в фильтре каталога. */
   sizes: sizesSchema.optional().default(["S", "M", "L"]),
+  /** Цвета на витрине и складские варианты (размер × цвет). */
+  colors: productColorsSchema,
   /** Витрина: новинка / хит / без метки (фильтры «Новинки», «Хиты»). */
   merchandisingTag: z.enum(["none", "new", "hit"]).optional().default("none"),
   /** Порядок в сортировке «Рекомендуемые» на PLP (меньше — выше). */

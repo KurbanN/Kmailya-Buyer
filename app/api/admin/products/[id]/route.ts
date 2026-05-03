@@ -4,6 +4,7 @@ import { type NextRequest } from "next/server"
 import { adminDb } from "@/lib/firebase-admin"
 import { handleApiError, ok } from "@/lib/server/api/responses"
 import { requireAdminAccess } from "@/lib/server/auth/admin-route"
+import { syncDefaultVariantsForProduct } from "@/lib/server/inventory/sync-default-variants"
 import { idParamSchema } from "@/lib/validators/admin-entities"
 import { productUpdateSchema } from "@/lib/validators/products"
 
@@ -41,6 +42,19 @@ export async function PATCH(
       },
       { merge: true },
     )
+
+    const merged = await adminDb.collection(COLLECTION).doc(id).get()
+    const d = merged.data() ?? {}
+    await syncDefaultVariantsForProduct({
+      productId: id,
+      baseSku: typeof d.sku === "string" ? d.sku : "",
+      sizes: Array.isArray(d.sizes) ? (d.sizes as string[]) : [],
+      colors: d.colors,
+      stockCount: typeof d.stockCount === "number" ? d.stockCount : 0,
+      actorUid: ctx.uid,
+      mode: "missing_only",
+    })
+
     return ok({ ok: true })
   } catch (err) {
     return handleApiError(err)

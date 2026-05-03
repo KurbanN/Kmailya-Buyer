@@ -3,6 +3,7 @@ import { Montserrat } from 'next/font/google'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 
+import { publicAssetUrl } from '@/lib/public-asset-url'
 import { AuthProvider } from '@/components/auth-provider'
 import { ChunkLoadRecovery } from '@/components/chunk-load-recovery'
 import { ShopProvider } from '@/components/shop-provider'
@@ -27,9 +28,9 @@ export const metadata: Metadata = {
   description: 'Минималистичный интернет-магазин одежды: новые коллекции и подборка моделей.',
   generator: 'v0.app',
   icons: {
-    icon: [{ url: '/logo.png', type: 'image/png', sizes: 'any' }],
-    apple: '/logo.png',
-    shortcut: '/logo.png',
+    icon: [{ url: publicAssetUrl('/logo.png'), type: 'image/png', sizes: 'any' }],
+    apple: publicAssetUrl('/logo.png'),
+    shortcut: publicAssetUrl('/logo.png'),
   },
 }
 
@@ -39,7 +40,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html
+      lang="ru"
+      suppressHydrationWarning
+      data-base-path={process.env.NEXT_PUBLIC_BASE_PATH ?? ''}
+    >
       <body
         className={`font-sans antialiased ${montserrat.variable} ${GeistMono.variable}`}
         suppressHydrationWarning

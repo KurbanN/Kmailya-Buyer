@@ -24,7 +24,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, profile, loading } = useAuth()
-  const normalizedRole = (profile?.role ?? "USER").toLowerCase()
+  const isStaff =
+    profile?.role === "admin" || profile?.role === "manager"
 
   useEffect(() => {
     if (loading) return
@@ -32,18 +33,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       router.replace("/login?callbackUrl=/admin")
       return
     }
-    if (normalizedRole === "customer" || normalizedRole === "user") {
+    if (profile && !isStaff) {
       router.replace("/account")
     }
-  }, [loading, user, normalizedRole, router])
+  }, [loading, user, profile, isStaff, router])
 
-  if (loading || !user || normalizedRole === "customer" || normalizedRole === "user") {
+  if (loading || !user || profile === null || !isStaff) {
     return (
       <div className="min-h-screen bg-neutral-100 px-4 py-10 text-sm text-neutral-500">
         Загрузка панели администратора…
       </div>
     )
   }
+
+  const roleLabel = profile.role
 
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-900">
@@ -88,7 +91,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-3">
               <span className="border border-neutral-300 px-2 py-1 text-[10px] uppercase tracking-[0.16em]">
-                {normalizedRole}
+                {roleLabel}
               </span>
               <button
                 type="button"

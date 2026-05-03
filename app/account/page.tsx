@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react"
 import { signOut } from "firebase/auth"
 
 import { getClientAuth } from "@/lib/firebase-client"
+import { siteFetchUrl } from "@/lib/public-asset-url"
 import { useAuth } from "@/components/auth-provider"
 import { StoreHeader } from "@/components/store-header"
 import { formatKzt } from "@/lib/currency"
@@ -53,7 +54,7 @@ export default function AccountPage() {
     setOrdersError(null)
     try {
       const token = await user.getIdToken(true)
-      const res = await fetch("/api/orders/me", {
+      const res = await fetch(siteFetchUrl("/api/orders/me"), {
         headers: { Authorization: `Bearer ${token}` },
       })
       const json = await res.json()
@@ -82,7 +83,8 @@ export default function AccountPage() {
     user?.email?.split("@")[0] ||
     "Покупатель"
   const initial = displayName.charAt(0).toUpperCase() || "?"
-  const isAdmin = profile?.role === "ADMIN"
+  const canAccessAdminUi =
+    profile?.role === "admin" || profile?.role === "manager"
 
   if (loading || !user) {
     return (
@@ -121,7 +123,7 @@ export default function AccountPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            {isAdmin ? (
+            {canAccessAdminUi ? (
               <Link
                 href="/admin"
                 className="inline-flex h-11 items-center border border-neutral-900 bg-white px-5 text-[11px] uppercase tracking-[0.16em] text-neutral-900 transition-colors hover:bg-neutral-100"
@@ -172,7 +174,7 @@ export default function AccountPage() {
                 <dt className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500">
                   Роль
                 </dt>
-                <dd className="mt-1 text-neutral-900">{profile?.role ?? "USER"}</dd>
+                <dd className="mt-1 text-neutral-900">{profile?.role ?? "customer"}</dd>
               </div>
             </dl>
           </section>

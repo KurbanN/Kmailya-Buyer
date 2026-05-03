@@ -370,41 +370,64 @@ export default function HomePage() {
         {/* Collections grid */}
         <section id="collections" className="border-t border-neutral-200 py-14 scroll-mt-24">
           <div className="mx-auto max-w-[1320px] px-4 sm:px-6">
-            <div className="mb-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-              <h2
-                className="text-2xl uppercase tracking-[0.06em] text-neutral-950 sm:text-3xl lg:max-w-[min(100%,28rem)]"
-                style={{ fontFamily: "var(--font-display), sans-serif" }}
-              >
-                Коллекции Kamilya 23–24
-              </h2>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-                {(
-                  [
-                    ["all", "Все"],
-                    ["men", "Мужское"],
-                    ["women", "Женское"],
-                    ["kid", "Детское"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setCategory(key)}
-                    className={cn(
-                      "border-b-2 pb-1 text-[11px] font-medium uppercase tracking-[0.2em] transition-colors",
-                      category === key
-                        ? "border-neutral-900 text-neutral-900"
-                        : "border-transparent text-neutral-400 hover:text-neutral-600",
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
+            <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-end sm:gap-6 lg:min-w-0 lg:items-center lg:gap-8">
+                <h2
+                  className="shrink-0 text-2xl uppercase tracking-[0.06em] text-neutral-950 sm:text-3xl sm:whitespace-nowrap"
+                  style={{ fontFamily: "var(--font-display), sans-serif" }}
+                >
+                  Коллекции Kamilya{" "}
+                  <span className="font-normal text-neutral-500">23–24</span>
+                </h2>
+                <div className="-mx-1 flex min-w-0 flex-nowrap items-center gap-x-5 overflow-x-auto px-1 pb-0.5 sm:mx-0 sm:flex-1 sm:justify-start sm:overflow-visible sm:px-0">
+                  {(
+                    [
+                      ["all", "Все"],
+                      ["men", "Мужское"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setCategory(key)}
+                      className={cn(
+                        "shrink-0 border-b-2 pb-1 text-[11px] font-medium uppercase tracking-[0.2em] transition-colors",
+                        category === key
+                          ? "border-neutral-900 text-neutral-900"
+                          : "border-transparent text-neutral-400 hover:text-neutral-600",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  <div className="flex shrink-0 items-center gap-x-5">
+                    {(
+                      [
+                        ["women", "Женское"],
+                        ["kid", "Детское"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setCategory(key)}
+                        className={cn(
+                          "shrink-0 border-b-2 pb-1 text-[11px] font-medium uppercase tracking-[0.2em] transition-colors",
+                          category === key
+                            ? "border-neutral-900 text-neutral-900"
+                            : "border-transparent text-neutral-400 hover:text-neutral-600",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 lg:ml-auto">
+              <div className="relative z-10 flex w-full min-w-0 shrink-0 flex-col items-end gap-2 sm:w-auto lg:ml-auto">
                 <Select defaultValue="all">
-                  <SelectTrigger className="h-10 min-w-[150px] rounded-none border-neutral-300 bg-transparent text-[11px] uppercase tracking-[0.15em]">
-                    <span className="flex items-baseline gap-1">
+                  <SelectTrigger className="h-10 w-full min-w-[200px] max-w-[min(100%,280px)] shrink-0 justify-between rounded-none border-neutral-300 bg-transparent text-[11px] uppercase tracking-[0.15em] sm:w-[240px]">
+                    <span className="flex min-w-0 items-baseline gap-1">
                       Фильтры <span className="font-normal text-neutral-400">(+)</span>
                     </span>
                     <SelectValue className="sr-only" aria-hidden />
@@ -416,7 +439,7 @@ export default function HomePage() {
                   </SelectContent>
                 </Select>
                 <Select defaultValue="price-asc">
-                  <SelectTrigger className="h-10 min-w-[160px] rounded-none border-neutral-300 bg-transparent text-[11px] uppercase tracking-[0.15em]">
+                  <SelectTrigger className="h-10 w-full min-w-[200px] max-w-[min(100%,280px)] shrink-0 justify-between rounded-none border-neutral-300 bg-transparent text-[11px] uppercase tracking-[0.15em] sm:w-[240px]">
                     <SelectValue placeholder="Сортировать" />
                   </SelectTrigger>
                   <SelectContent>

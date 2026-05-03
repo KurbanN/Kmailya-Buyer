@@ -23,25 +23,12 @@ export type PromoApplyResult =
   | { ok: true; discountKzt: number; code: string }
   | { ok: false; error: string }
 
-/**
- * Считает скидку в ₸ по документу промокода. Сумма заказа (товары) — в тенге.
- * minOrderAmount и fixed value в Firestore — в USD (как цены в каталоге).
- */
-export async function validatePromoForMerchandiseKzt(
-  rawCode: string | undefined | null,
+/** Общая логика по полям документа промокода (без чтения БД). */
+export function applyPromoFromDocData(
+  d: Record<string, unknown>,
+  trimmedCode: string,
   merchandiseSubtotalKzt: number,
-): Promise<PromoApplyResult> {
-  const trimmed = typeof rawCode === "string" ? rawCode.trim().toUpperCase() : ""
-  if (!trimmed) {
-    return { ok: true, discountKzt: 0, code: "" }
-  }
-
-  const snap = await adminDb.collection("promocodes").doc(trimmed).get()
-  if (!snap.exists) {
-    return { ok: false, error: "Промокод не найден" }
-  }
-
-  const d = snap.data() ?? {}
+): PromoApplyResult {
   if (d.isActive === false) {
     return { ok: false, error: "Промокод недоступен" }
   }
@@ -86,5 +73,26 @@ export async function validatePromoForMerchandiseKzt(
   }
 
   discountKzt = Math.min(discountKzt, Math.max(0, Math.round(merchandiseSubtotalKzt)))
-  return { ok: true, discountKzt, code: trimmed }
+  return { ok: true, discountKzt, code: trimmedCode }
+}
+
+/**
+ * Считает скидку в ₸ по документу промокода. Сумма заказа (товары) — в тенге.
+ * minOrderAmount и fixed value в Firestore — в USD (как цены в каталоге).
+ */
+export async function validatePromoForMerchandiseKzt(
+  rawCode: string | undefined | null,
+  merchandiseSubtotalKzt: number,
+): Promise<PromoApplyResult> {
+  const trimmed = typeof rawCode === "string" ? rawCode.trim().toUpperCase() : ""
+  if (!trimmed) {
+    return { ok: true, discountKzt: 0, code: "" }
+  }
+
+  const snap = await adminDb.collection("promocodes").doc(trimmed).get()
+  if (!snap.exists) {
+    return { ok: false, error: "Промокод не найден" }
+  }
+
+  return applyPromoFromDocData(snap.data() ?? {}, trimmed, merchandiseSubtotalKzt)
 }
