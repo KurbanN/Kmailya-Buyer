@@ -56,7 +56,11 @@ export default function RootLayout({
             <ConditionalFooter />
           </ShopProvider>
         </AuthProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.NODE_ENV === "production" &&
+        typeof process.env.VERCEL !== "undefined" &&
+        process.env.VERCEL !== "" ? (
+          <Analytics />
+        ) : null}
       </body>
     </html>
   )

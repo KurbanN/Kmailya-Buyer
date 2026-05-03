@@ -1,3 +1,5 @@
+import { publicAssetUrl } from "@/lib/public-asset-url"
+
 /**
  * Логотипы из `public/brand` — используются на главной странице.
  * Добавьте файл в папку и запись в массив.
@@ -13,5 +15,5 @@ export const BRAND_LOGO_FILES: { file: string; alt: string }[] = [
 ]
 
 export function brandLogoSrc(file: string) {
-  return `/brand/${encodeURIComponent(file)}`
+  return publicAssetUrl(`/brand/${encodeURIComponent(file)}`)
 }

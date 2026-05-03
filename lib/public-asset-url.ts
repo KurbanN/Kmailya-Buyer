@@ -73,7 +73,22 @@ export function siteFetchUrl(path: string): string {
   return publicAssetUrl(path)
 }
 
+/**
+ * Нормализует путь к ассету: idempotent, если путь уже с префиксом `basePath`.
+ */
+export function ensurePublicAssetUrl(path: string | undefined | null): string {
+  if (path == null || path === "") return publicAssetUrl("/logo.png")
+  const p = path.trim()
+  if (/^https?:\/\//i.test(p) || p.startsWith("data:")) return p
+  const base = resolveSiteBasePath()
+  const normalized = normalizeLeadingSlash(p)
+  if (base && (normalized === base || normalized.startsWith(`${base}/`))) {
+    return normalized
+  }
+  return publicAssetUrl(p)
+}
+
 /** Для ответа `/api/products` на клиенте — те же правила, что и при сборке из Firestore. */
 export function withPublicAssetUrls<T extends { gallery: string[] }>(p: T): T {
-  return { ...p, gallery: p.gallery.map(publicAssetUrl) }
+  return { ...p, gallery: p.gallery.map(ensurePublicAssetUrl) }
 }

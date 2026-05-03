@@ -11,7 +11,7 @@ export const PRODUCT_FILES = [
 ] as const
 
 export const productSrc = (file: (typeof PRODUCT_FILES)[number]) =>
-  `/products/${encodeURIComponent(file)}`
+  publicAssetUrl(`/products/${encodeURIComponent(file)}`)
 
 export const P = PRODUCT_FILES.map(productSrc)
 
@@ -47,9 +47,7 @@ export type ProductDetail = {
 
 function rotateGallery(start: number): string[] {
   const n = P.length
-  return Array.from({ length: n }, (_, i) =>
-    publicAssetUrl(P[(start + i) % n]!),
-  )
+  return Array.from({ length: n }, (_, i) => P[(start + i) % n]!)
 }
 
 export const PRODUCTS: Record<string, ProductDetail> = {
